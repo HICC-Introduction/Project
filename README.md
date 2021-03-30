@@ -45,17 +45,15 @@
 
 int test_variable = 13; // 변수명
 
-int TestClass (void)  // 함수명
+int TestClass (int testProperty)  // 함수명
 { 
-   int testProperty=41;
-   printf("%d \n", testProperty);
+   return testProperty;
 }   
  
 int main (void)
  {
-    if(testProperty==43)
-       testProperty=43;
-       test_variable = testProperty;
+    if(test_variable==43)
+       test_variable=TestClass(43);
        printf("%d \n", test_variable);
        return 0;
   }
