@@ -1,0 +1,169 @@
+// 이 코드는 '숫자' 연산 '숫자' = '결과'의 형식으로만 이용가능합니다
+/* tm1637 모듈이 자동으로 3자리 이하는 마이너스 부호를 표시하지만 4자리 수에는 표시하지 못합니다.
+   그래서 따로 연결한 7 segment가 양수에는 led를 끄고 음수는 led를 켤 수 있게 했습니다.
+*/
+#include <Keypad.h>
+#include <Arduino.h>
+#include <TM1637Display.h>
+
+#define CLK A0
+#define DIO A1
+const byte ROWS = 4; //four rows
+const byte COLS = 4; //four columns
+//define the cymbols on the buttons of the keypads
+#define segG 10  // Gpin을 10에 연결
+
+
+char customKey;
+char hexaKeys[ROWS][COLS] = {
+  {'1', '2', '3', 'A'},
+  {'4', '5', '6', 'B'},
+  {'7', '8', '9', 'C'},
+  {'*', '0', '#', 'D'}
+};
+byte rowPins[ROWS] = {9, 8, 7, 6}; //connect to the row pinouts of the keypad
+byte colPins[COLS] = {5, 4, 3, 2}; //connect to the column pinouts of the keypad
+
+
+double first =0;  //첫번째 숫자
+double second = 0;//두번째 숫자
+double result = 0;//결과
+double aa = 0;    //4자리수를 넘어가면 tm1637이 0000표시하도록 유도
+char cal;         //연산기호 저장
+
+
+Keypad customKeypad = Keypad( makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
+
+TM1637Display display(CLK, DIO);
+
+void setup() {
+  display.setBrightness(0x0f);
+  display.showNumberDec(0, false);
+  pinMode(segG, OUTPUT);
+} 
+
+void loop() {
+ customKey = customKeypad.getKey();
+
+  operation1();      //첫번째 수 입력
+  dummy_calculate(); //연산 기호 
+  operation2();      //두번째 수 입력
+  calculate();       //실제 연산
+  
+  if(customKey == '#'){  // 등호 
+    if(result> 9999 || result < -9999){
+        result = 0;
+        aa = true;
+      }
+      else{
+        aa = false;
+      }
+     if(result < 0){
+       digitalWrite(segG, LOW);
+     }
+     else  digitalWrite(segG, HIGH);
+    display.showNumberDec(result, aa);
+    first = 0;
+    second = 0;
+    result = 0;
+   
+
+  }
+}
+
+void clean(){
+  first = 0;
+  second = 0;
+  result = 0;
+  cal = NULL;
+}
+
+int operation1() {
+ while(1){
+  customKey = customKeypad.getKey();
+    if (customKey >= '0' && customKey <= '9') {
+     first = (first*10) + (customKey - '0');
+
+       if(first > 9999 || first < -9999){
+        first = 0;
+        aa = true;
+       }
+       else{
+        aa = false;
+       }
+       if(result < 0){
+        digitalWrite(segG, LOW);
+       }
+       else digitalWrite(segG, HIGH);
+     display.showNumberDec(first, aa);   
+    }  
+    if(customKey == 'A') break;
+    else if(customKey == 'B') break;
+    else if(customKey == 'C') break;
+    else if(customKey == 'D') break;
+    else if (customKey == '*') clean();
+
+ }
+ return first;
+}
+
+int operation2() {
+ while(1){
+   customKey = customKeypad.getKey();
+    if (customKey >= '0' && customKey <= '9') {
+      second = (second*10) + (customKey - '0');
+  
+       if(second > 9999 || second < -9999){
+        second = 0;
+        aa = true;
+       }
+       else{
+        aa = false;
+       }
+       if(result < 0){
+         digitalWrite(segG, LOW);
+       }
+       else  digitalWrite(segG, HIGH);
+       
+     display.showNumberDec(second, aa);
+    }  
+    if(customKey == '#') break; 
+    else if(customKey == '*') clean();
+   }
+ return second;
+}
+
+void calculate(){
+  switch(cal){
+     case 'A' :
+       result = first + second;
+       break;
+     case 'B' :
+       result = first - second;
+       break;
+     case 'C' :
+       result = first * second;
+       break;
+     case 'D' :
+       result = first / second;
+       break;
+    }
+}
+
+void dummy_calculate(){
+  switch(customKey){
+   customKey = customKeypad.getKey();
+     case 'A' :
+       cal = 'A';
+       break;
+     case 'B' :
+       cal = 'B';
+       break;
+     case 'C' :
+       cal = 'C';
+       break;
+     case 'D' :
+       cal = 'D';
+       break;
+    }
+}
